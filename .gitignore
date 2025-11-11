@@ -1,0 +1,4 @@
+__pycache__/
+.phibook
+db.sqlite3
+.env
