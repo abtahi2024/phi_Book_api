@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator,MaxValueValidator
 from books.validators import validate_file_size
+from cloudinary.models import CloudinaryField
 # Create your models here.
 
 class Category(models.Model):
@@ -25,7 +26,7 @@ class Book(models.Model):
 
 class BookImages(models.Model):
     book=models.ForeignKey(Book,on_delete=models.CASCADE,related_name='images')
-    image=models.ImageField(upload_to='Books/images',validators=[validate_file_size])
+    image=CloudinaryField('images')
 
 class Review(models.Model):
     book=models.ForeignKey(Book,on_delete=models.CASCADE)

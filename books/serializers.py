@@ -12,6 +12,7 @@ class CategorySerializer(serializers.ModelSerializer):
     book_count=serializers.IntegerField(read_only=True,help_text='Return the number books in this category')
 
 class BookImageSerializer(serializers.ModelSerializer):
+    image=serializers.ImageField()
     class Meta:
         model=BookImages
         fields=['id','image']

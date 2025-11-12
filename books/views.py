@@ -22,7 +22,6 @@ class BookViewSet(ModelViewSet):
     - ALLows Authenticated admin to create update, and delete books
     - Allows users to browse and filter book
     """
-    queryset=Book.objects.all()
     serializer_class=BookSerializers
     filter_backends=[DjangoFilterBackend,SearchFilter,OrderingFilter]
     filterset_class=BookFilter
@@ -30,6 +29,9 @@ class BookViewSet(ModelViewSet):
     search_fields=['name','description']
     ordering_fields=['price','updated_at']
     permission_classes=[IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        return Book.objects.prefetch_related('images').all()
 
     @swagger_auto_schema(operation_summary='Every on can saw the book and Read')
     def list(self, request, *args, **kwargs):

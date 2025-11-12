@@ -18,7 +18,7 @@ from datetime import timedelta
 from decouple import config
 import os
 from dotenv import load_dotenv
-
+import cloudinary
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -26,9 +26,9 @@ from dotenv import load_dotenv
 SECRET_KEY = 'django-insecure-$me4-@=e20l*j(66%45j4ixvv*_^en#@&cxjm=p-n^7#t&4!4#'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [".vercel.app",'127.0.0.1']
 
 AUTH_USER_MODEL='user.User'
 
@@ -55,12 +55,16 @@ INSTALLED_APPS = [
     # Django Rest Framework
     'djoser',
     # # required for serving swagger ui's css/js files
-    'drf_yasg'
+    'drf_yasg',
+    # WhiteNoise in development
+    "whitenoise.runserver_nostatic",
 ]
 
 MIDDLEWARE = [
     # debiugmiddleware
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # Enable WhiteNoise
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -88,7 +92,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'phi_book_management.wsgi.application'
+WSGI_APPLICATION = 'phi_book_management.wsgi.app'
 
 
 INTERNAL_IPS = [
@@ -112,14 +116,13 @@ load_dotenv()
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': int(os.getenv("DB_PORT")),
     }
 }
-
 
 
 
@@ -140,7 +143,16 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+# cloudinar images storage
+cloudinary.config( 
+    cloud_name = os.getenv('cloud_name'), 
+    api_key = os.getenv('api_key'), 
+    api_secret = os.getenv('api_secret'), # Click 'View API Keys' above to copy your API secret
+    secure=True
+)
 
+# Media storage settings
+DEFAULT_FILE_STORAGE='cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -158,6 +170,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles" #configured
+STATICFILES_STORAGE="whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -182,6 +196,9 @@ SIMPLE_JWT = {
 }
 
 DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': True,
     'SERIALIZERS': {
         'user_create':'user.serializers.UserCreateSerializer',
         'user': 'user.serializers.UserSerializer', 
@@ -199,3 +216,10 @@ SWAGGER_SETTINGS = {
       }
    }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST=config('EMAIL_HOST')
+EMAIL_USE_TLS=config('EMAIL_USE_TLS',cast=bool)
+EMAIL_PORT=config('EMAIL_PORT')
+EMAIL_HOST_USER=config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD=config('EMAIL_HOST_PASSWORD')
