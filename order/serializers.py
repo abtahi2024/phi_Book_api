@@ -19,17 +19,20 @@ class AddCartItemSerializer(serializers.ModelSerializer):
         fields=['id','book_id','quantity']
     
     def save(self, **kwargs):
-        cart_id=self.context['cart_id']
-        book_id=self.context['book_id']
-        quantity=self.context['quantity']
+        cart_id = self.context['cart_id']
+        book_id = self.validated_data['book_id']
+        quantity = self.validated_data['quantity']
 
         try:
-            cart_item=CartItem.objects.get(cart_id=cart_id,book_id=book_id,quantity=quantity)
-            cart_item.quantity+=quantity
-            self.instance=cart_item.save()
+            cart_item = CartItem.objects.get(cart_id=cart_id, book_id=book_id)
+            cart_item.quantity += quantity
+            cart_item.save()
+            self.instance = cart_item
         except CartItem.DoesNotExist:
-            self.instance=CartItem.objects.create(cart_id=cart_id,**self.validated_data)
+            self.instance = CartItem.objects.create(cart_id=cart_id, **self.validated_data)
+
         return self.instance
+
     def validate_book_id(self, value):
         if not Book.objects.filter(pk=value).exists():
             raise serializers.ValidationError(f'Book with id{value} does not Exists')

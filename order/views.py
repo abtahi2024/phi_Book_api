@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from order.services import OrderService
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 # Create your vews here.
 
 class CartViewSet(CreateModelMixin,GenericViewSet,RetrieveModelMixin,DestroyModelMixin):
@@ -24,13 +25,29 @@ class CartViewSet(CreateModelMixin,GenericViewSet,RetrieveModelMixin,DestroyMode
     
     @swagger_auto_schema(operation_summary='user Post and Add the Cart')
     def create(self, request, *args, **kwargs):
+        existing_cart =Cart.objects.filter(user=request.user).first()
+        if existing_cart:
+            serializer=self.get_serializer(existing_cart)
+            return Response(serializer.data,status=status.HTTP_200_OK)
         return super().create(request, *args, **kwargs)
+    
     @swagger_auto_schema(operation_summary='Every one can see the cart')
     def list(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        """Return the logged-in user's cart if it exists"""
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            return Response({'detail': 'No cart found for this user.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     @swagger_auto_schema(operation_summary='user can Delete')
     def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            return Response({'detail': 'No cart found.'}, status=status.HTTP_404_NOT_FOUND)
+        cart.delete()
+        return Response({'detail': 'Cart deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
     @swagger_auto_schema(operation_summary='show the cart')
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
@@ -62,7 +79,7 @@ class CartItemViewSet(ModelViewSet):
         return super().create(request, *args, **kwargs)
     
 class OrderViewset(ModelViewSet):
-    http_method_names=['get','post','patch','head','options']
+    http_method_names=['get','post','patch','delete','head','options']
 
     @swagger_auto_schema(operation_summary='user can cancel the Cart')
     @action(detail=True,methods=['post'])
@@ -75,8 +92,9 @@ class OrderViewset(ModelViewSet):
     @action(detail=True,methods=['patch'])
     def update_status(self,request,pk=None):
         order=self.get_object()
-        serializer=UpdateOrderSerializer(order,data=request.data,pertial=True)
+        serializer=UpdateOrderSerializer(order,data=request.data,partial=True)
         serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({'status':f'order status updated to {request.data['status']}'})
     
     def get_permissions(self):
@@ -113,4 +131,8 @@ class OrderViewset(ModelViewSet):
     @swagger_auto_schema(operation_summary='Cart order id POST')
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+    @swagger_auto_schema(operation_summary='Admin can delete order')
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     
