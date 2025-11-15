@@ -5,7 +5,7 @@ from order.views import CartViewSet,CartItemViewSet,OrderViewset
 
 router=routers.DefaultRouter()
 router.register('books',BookViewSet,basename='books')
-router.register('categories',CategoryViewSet)
+router.register('categories',CategoryViewSet,basename='categories')
 router.register('carts',CartViewSet,basename='carts')
 router.register('orders',OrderViewset,basename='orders')
 
